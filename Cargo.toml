@@ -1,0 +1,23 @@
+[package]
+name = "reb"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+iced = "0.9.0"
+iced_lazy = "0.6.1"
+iced_native = "0.10.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = "0.3.61"
+lol_alloc = "0.3.0"
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = 3
+debug = false
+codegen-units = 1
+strip = true
