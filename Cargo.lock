@@ -1515,6 +1515,7 @@ name = "reb"
 version = "0.1.0"
 dependencies = [
  "Boa",
+ "bytemuck",
  "console_error_panic_hook",
  "cssparser",
  "html5ever",

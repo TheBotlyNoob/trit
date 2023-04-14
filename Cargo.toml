@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 Boa = "0.13.1"
+bytemuck = "1.13.1"
 cssparser = "0.29.6"
 html5ever = "0.26.0"
 reqwest = "0.11.16"

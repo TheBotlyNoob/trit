@@ -1,4 +1,7 @@
 use softbuffer::GraphicsContext;
+use tiny_skia::{
+    FillRule, FilterQuality, Paint, PathBuilder, Pattern, Pixmap, SpreadMode, Transform,
+};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
@@ -47,21 +50,60 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let size = window.inner_size();
                     (size.width, size.height)
                 };
-                let buffer = (0..((width * height) as usize))
-                    .map(|index| {
-                        let y = index / (width as usize);
-                        let x = index % (width as usize);
-                        let red = x % 255;
-                        let green = y % 255;
-                        let blue = (x * y) % 255;
 
-                        let color = blue | (green << 8) | (red << 16);
+                let triangle = crate_triangle();
 
-                        color as u32
-                    })
-                    .collect::<Vec<_>>();
+                let paint = Paint {
+                    anti_alias: true,
+                    shader: Pattern::new(
+                        triangle.as_ref(),
+                        SpreadMode::Repeat,
+                        FilterQuality::Bicubic,
+                        1.0,
+                        Transform::from_row(1.5, -0.4, 0.0, -0.8, 5.0, 1.0),
+                    ),
+                    ..Default::default()
+                };
 
-                graphics_context.set_buffer(&buffer, width as u16, height as u16);
+                let path = PathBuilder::from_circle(200.0, 200.0, 180.0).unwrap();
+
+                let mut pixmap = Pixmap::new(width, height).unwrap();
+                pixmap.fill_path(
+                    &path,
+                    &paint,
+                    FillRule::Winding,
+                    Transform::identity(),
+                    None,
+                );
+
+                fn crate_triangle() -> Pixmap {
+                    let mut paint = Paint::default();
+                    paint.set_color_rgba8(50, 127, 150, 200);
+                    paint.anti_alias = true;
+
+                    let mut pb = PathBuilder::new();
+                    pb.move_to(0.0, 20.0);
+                    pb.line_to(20.0, 20.0);
+                    pb.line_to(10.0, 0.0);
+                    pb.close();
+                    let path = pb.finish().unwrap();
+
+                    let mut pixmap = Pixmap::new(20, 20).unwrap();
+                    pixmap.fill_path(
+                        &path,
+                        &paint,
+                        FillRule::Winding,
+                        Transform::identity(),
+                        None,
+                    );
+                    pixmap
+                }
+
+                graphics_context.set_buffer(
+                    bytemuck::cast_slice(pixmap.pixels()),
+                    width as u16,
+                    height as u16,
+                );
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
