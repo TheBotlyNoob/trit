@@ -32,6 +32,5 @@ tracing-wasm = "0.2.1"
 panic = "abort"
 lto = true
 opt-level = 3
-debug = false
 codegen-units = 1
 strip = true
