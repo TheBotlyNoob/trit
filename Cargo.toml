@@ -28,9 +28,10 @@ wasm-bindgen = "0.2.84"
 console_error_panic_hook = "0.1.7"
 tracing-wasm = "0.2.1"
 
+# TODO: fine-grain these for both wasm and native
 [profile.release]
 panic = "abort"
 lto = true
 opt-level = 3
 codegen-units = 1
-strip = true
+# strip = true # :/ doesn't work on wasm
