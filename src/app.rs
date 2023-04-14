@@ -1,5 +1,5 @@
 use softbuffer::GraphicsContext;
-use tiny_skia::{ClipMask, FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
+use tiny_skia::{ClipMask, Color, FillRule, Paint, PathBuilder, Pixmap, Rect, Shader, Transform};
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -16,29 +16,40 @@ pub async fn event_loop(
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let PhysicalSize { width, height } = window.inner_size();
-                let mut pixmap = Pixmap::new(width, height).unwrap();
 
-                let clip_path = {
+                let paint1 = Paint {
+                    anti_alias: true,
+                    shader: Shader::SolidColor(Color::from_rgba8(50, 127, 150, 200)),
+                    ..Default::default()
+                };
+
+                // makes a rectangle with rounded corners
+                let path1 = {
+                    let (x, y) = (100.0, 100.0);
+                    let (w, h) = (200.0, 200.0);
+                    let border_radius = 50.0;
+
                     let mut pb = PathBuilder::new();
-                    pb.push_circle(250.0, 250.0, 200.0);
-                    pb.push_circle(250.0, 250.0, 100.0);
+                    pb.move_to(x, y);
+                    pb.line_to(x + w - border_radius, y);
+                    pb.quad_to(x + w, y, x + w, y + border_radius);
+                    pb.line_to(x + w, y + h - border_radius);
+                    pb.quad_to(x + w, y + h, x + w - border_radius, y + h);
+                    pb.line_to(x + border_radius, y + h);
+                    pb.quad_to(x, y + h, x, y + h - border_radius);
+                    pb.line_to(x, y + border_radius);
+                    pb.quad_to(x, y, x + border_radius, y);
+                    pb.close();
                     pb.finish().unwrap()
                 };
 
-                let clip_path = clip_path
-                    .transform(Transform::from_row(1.0, -0.3, 0.0, 1.0, 0.0, 75.0))
-                    .unwrap();
-
-                let mut clip_mask = ClipMask::new();
-                clip_mask.set_path(500, 500, &clip_path, FillRule::EvenOdd, true);
-
-                let mut paint = Paint::default();
-                paint.set_color_rgba8(50, 127, 150, 200);
-                pixmap.fill_rect(
-                    Rect::from_xywh(0.0, 0.0, 500.0, 500.0).unwrap(),
-                    &paint,
+                let mut pixmap = Pixmap::new(width, height).unwrap();
+                pixmap.fill_path(
+                    &path1,
+                    &paint1,
+                    FillRule::Winding,
                     Transform::identity(),
-                    Some(&clip_mask),
+                    None,
                 );
 
                 gfx_ctx.set_buffer(

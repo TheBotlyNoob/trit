@@ -7,7 +7,7 @@ mod app;
 
 async fn main_() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop)?;
+    let window = WindowBuilder::new().with_title("Reb").build(&event_loop)?;
 
     #[cfg(target_arch = "wasm32")]
     {
