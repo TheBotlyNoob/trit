@@ -1527,7 +1527,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-wasm",
- "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
  "winit",
