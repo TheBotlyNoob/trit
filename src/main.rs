@@ -1,10 +1,14 @@
+#![warn(clippy::nursery, clippy::pedantic)]
+
 use softbuffer::GraphicsContext;
 use winit::{event_loop::EventLoop, window::WindowBuilder};
 
 mod app;
+mod dom;
 
 // bootstrap for both native and wasm - the main code is in `app.rs`
 
+#[allow(clippy::future_not_send)]
 async fn main_() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().with_title("Reb").build(&event_loop)?;
@@ -63,7 +67,7 @@ fn main() {
     {
         tracing_subscriber::fmt::init();
 
-        let rt = tokio::runtime::Builder::new_multi_thread()
+        let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
