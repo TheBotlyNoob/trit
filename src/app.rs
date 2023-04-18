@@ -1,19 +1,35 @@
+use cosmic_text::{Attrs, Buffer, FontSystem, Metrics, SwashCache};
 use html5ever::tendril::TendrilSink;
+use html5ever::tree_builder::TreeSink;
 use html5ever::{parse_document, ParseOpts};
+use html_tags::ElementOwned;
 use softbuffer::GraphicsContext;
-use tiny_skia::{Path, PathBuilder, Pixmap, Rect};
+use tiny_skia::{Paint, Path, PathBuilder, Pixmap, Rect, Transform};
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
 
-use crate::dom::Dom;
+use crate::dom::{Dom, Node};
 
+#[allow(clippy::too_many_lines)]
 pub fn event_loop(
     window: Window,
     event_loop: EventLoop<()>,
     mut gfx_ctx: GraphicsContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let mut font_system = FontSystem::new();
+    let mut swash_cache = SwashCache::new();
+    let default_metrics = Metrics::new(14.0, 20.0);
+
+    let mut buffer = Buffer::new(&mut font_system, default_metrics);
+
+    let mut dom = {
+        let dom = parse_document(Dom::default(), ParseOpts::default());
+
+        dom.one(include_str!("../test.html"))
+    };
+
     let mut url = String::with_capacity(16);
 
     event_loop.run(move |event, _, control_flow| {
@@ -23,7 +39,68 @@ pub fn event_loop(
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 let PhysicalSize { width, height } = window.inner_size();
 
-                let pixmap = Pixmap::new(width, height).unwrap();
+                #[allow(clippy::cast_precision_loss)]
+                buffer.set_size(&mut font_system, width as _, height as _);
+
+                let mut pixmap = Pixmap::new(width, height).unwrap();
+
+                let doc = dom.get_document();
+
+                let root_nodes = dom
+                    .map
+                    .values()
+                    .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == doc));
+
+                for node in root_nodes {
+                    match node {
+                        Node::Element { elem, children, .. } => {
+                            let mut text = String::new();
+                            for &child in children {
+                                let node = dom.map.get(child);
+                                if let Some(Node::Text { contents }) = node {
+                                    text.push_str(if matches!(elem, ElementOwned::Pre(_)) {
+                                        contents
+                                    } else {
+                                        contents.trim()
+                                    });
+                                }
+                            }
+                            let attrs = Attrs::new();
+                            buffer.set_text(&mut font_system, &text, attrs);
+                            buffer.draw(
+                                &mut font_system,
+                                &mut swash_cache,
+                                cosmic_text::Color::rgb(255, 255, 255),
+                                |x, y, w, h, color| {
+                                    #[allow(clippy::cast_precision_loss)]
+                                    let rect =
+                                        Rect::from_xywh(x as _, y as _, w as _, h as _).unwrap();
+                                    pixmap.fill_rect(
+                                        rect,
+                                        &Paint {
+                                            shader: tiny_skia::Shader::SolidColor(
+                                                tiny_skia::Color::from_rgba8(
+                                                    color.r(),
+                                                    color.g(),
+                                                    color.b(),
+                                                    255,
+                                                ),
+                                            ),
+                                            anti_alias: true,
+                                            ..Default::default()
+                                        },
+                                        Transform::identity(),
+                                        None,
+                                    );
+                                },
+                            );
+                            tracing::info!(?text, "rendered");
+                        }
+                        _ => {
+                            tracing::warn!("TODO - rest of the node types");
+                        }
+                    }
+                }
 
                 #[allow(clippy::cast_possible_truncation)]
                 gfx_ctx.set_buffer(
