@@ -1,3 +1,5 @@
+use html5ever::tendril::TendrilSink;
+use html5ever::{parse_document, ParseOpts};
 use softbuffer::GraphicsContext;
 use tiny_skia::{Path, PathBuilder, Pixmap, Rect};
 use winit::dpi::PhysicalSize;
@@ -5,13 +7,23 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
 
-#[allow(clippy::unused_async, clippy::future_not_send)]
-pub async fn event_loop(
+use crate::dom::Dom;
+
+pub fn event_loop(
     window: Window,
     event_loop: EventLoop<()>,
     mut gfx_ctx: GraphicsContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let dom = crate::dom::ArenaDom::default();
+    let dom = {
+        let dom = parse_document(Dom::default(), ParseOpts::default());
+
+        let html = std::fs::read_to_string("test.html")?;
+        dom.one(html)
+    };
+
+    println!("{dom:#?}");
+
+    let mut url = String::with_capacity(16);
 
     event_loop.run(move |event, _, control_flow| {
         control_flow.set_poll();
@@ -34,6 +46,38 @@ pub async fn event_loop(
                 window_id,
             } if window_id == window.id() => {
                 control_flow.set_exit();
+            }
+            Event::MainEventsCleared => {
+                window.request_redraw();
+            }
+            // user input
+            Event::WindowEvent {
+                event: WindowEvent::KeyboardInput { input, .. },
+                ..
+            } => {
+                if let Some(keycode) = input.virtual_keycode {
+                    if input.state == winit::event::ElementState::Pressed {
+                        match keycode {
+                            winit::event::VirtualKeyCode::Escape => {
+                                control_flow.set_exit();
+                            }
+                            winit::event::VirtualKeyCode::Return => {
+                                tracing::warn!("TODO: navigate to {url}");
+                            }
+                            winit::event::VirtualKeyCode::Back => {
+                                url.pop();
+                            }
+
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            Event::WindowEvent {
+                event: WindowEvent::ReceivedCharacter(c),
+                ..
+            } => {
+                url.push(c);
             }
             _ => {}
         }
