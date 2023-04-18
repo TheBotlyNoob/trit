@@ -209,3 +209,21 @@ impl TreeSink for Dom {
         todo!()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use html5ever::{parse_document, tendril::TendrilSink, ParseOpts};
+
+    #[test]
+    fn basic() {
+        let dom = {
+            let dom = parse_document(Dom::default(), ParseOpts::default());
+
+            let html = std::fs::read_to_string("test.html").unwrap();
+            dom.one(html)
+        };
+
+        println!("{dom:#?}");
+    }
+}

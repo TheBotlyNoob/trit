@@ -14,15 +14,6 @@ pub fn event_loop(
     event_loop: EventLoop<()>,
     mut gfx_ctx: GraphicsContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let dom = {
-        let dom = parse_document(Dom::default(), ParseOpts::default());
-
-        let html = std::fs::read_to_string("test.html")?;
-        dom.one(html)
-    };
-
-    println!("{dom:#?}");
-
     let mut url = String::with_capacity(16);
 
     event_loop.run(move |event, _, control_flow| {
