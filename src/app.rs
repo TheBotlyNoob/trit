@@ -10,7 +10,7 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
 
-use crate::dom::{Dom, Node};
+use crate::dom::{Dom, Node, NodeHandle};
 
 #[allow(clippy::too_many_lines)]
 pub fn event_loop(
@@ -43,62 +43,28 @@ pub fn event_loop(
                 buffer.set_size(&mut font_system, width as _, height as _);
 
                 let mut pixmap = Pixmap::new(width, height).unwrap();
+                pixmap.fill(tiny_skia::Color::WHITE);
 
-                let doc = dom.get_document();
+                let root = dom.get_document();
 
                 let root_nodes = dom
-                    .map
+                    .map()
                     .values()
-                    .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == doc));
+                    .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == root));
 
+                // TODO: external stylesheets
+                let style_nodes = dom
+                    .map()
+                    .values()
+                    .filter(|n| matches!(n, Node::Element { elem, .. } if matches!(elem, ElementOwned::Style(_))));
+                
                 for node in root_nodes {
-                    match node {
-                        Node::Element { elem, children, .. } => {
-                            let mut text = String::new();
-                            for &child in children {
-                                let node = dom.map.get(child);
-                                if let Some(Node::Text { contents }) = node {
-                                    text.push_str(if matches!(elem, ElementOwned::Pre(_)) {
-                                        contents
-                                    } else {
-                                        contents.trim()
-                                    });
-                                }
-                            }
-                            let attrs = Attrs::new();
-                            buffer.set_text(&mut font_system, &text, attrs);
-                            buffer.draw(
-                                &mut font_system,
-                                &mut swash_cache,
-                                cosmic_text::Color::rgb(255, 255, 255),
-                                |x, y, w, h, color| {
-                                    #[allow(clippy::cast_precision_loss)]
-                                    let rect =
-                                        Rect::from_xywh(x as _, y as _, w as _, h as _).unwrap();
-                                    pixmap.fill_rect(
-                                        rect,
-                                        &Paint {
-                                            shader: tiny_skia::Shader::SolidColor(
-                                                tiny_skia::Color::from_rgba8(
-                                                    color.r(),
-                                                    color.g(),
-                                                    color.b(),
-                                                    255,
-                                                ),
-                                            ),
-                                            anti_alias: true,
-                                            ..Default::default()
-                                        },
-                                        Transform::identity(),
-                                        None,
-                                    );
-                                },
-                            );
-                            tracing::info!(?text, "rendered");
-                        }
-                        _ => {
-                            tracing::warn!("TODO - rest of the node types");
-                        }
+                    let Node::Element { elem, children, .. } = node else {
+                        continue; // this can't happen 
+                    };
+
+                    if !matches!(elem, ElementOwned::Script(_) | ElementOwned::Style(_)) {
+                      render_text(&dom, elem, children, &mut pixmap, &mut buffer, &mut font_system, &mut swash_cache);
                     }
                 }
 
@@ -168,4 +134,47 @@ fn rounded_rect(rect: Rect, border_radius: f32) -> Path {
     pb.quad_to(x, y, x + border_radius, y);
     pb.close();
     pb.finish().unwrap()
+}
+
+fn render_text(dom: &Dom, elem: &ElementOwned, children: &Vec<NodeHandle>, pixmap: &mut Pixmap, buffer: &mut Buffer, font_system: &mut FontSystem, swash_cache: &mut SwashCache) {
+    let mut text = String::new();
+    for &child in children {
+        let node = dom.map().get(child);
+        if let Some(Node::Text { contents }) = node {
+            text.push_str(if matches!(elem, ElementOwned::Pre(_)) {
+                contents
+            } else {
+                contents.trim()
+            });
+        }
+    }
+    let attrs = Attrs::new();
+    buffer.set_text(font_system, &text, attrs);
+    buffer.draw(
+        font_system,
+        swash_cache,
+        cosmic_text::Color::rgb(0, 0, 0),
+        |x, y, w, h, color| {
+            #[allow(clippy::cast_precision_loss)]
+            let rect =
+                Rect::from_xywh(x as _, y as _, w as _, h as _).unwrap();
+            pixmap.fill_rect(
+                rect,
+                &Paint {
+                    shader: tiny_skia::Shader::SolidColor(
+                        tiny_skia::Color::from_rgba8(
+                            color.r(),
+                            color.g(),
+                            color.b(),
+                            color.a(),
+                        ),
+                    ),
+                    anti_alias: true,
+                    ..Default::default()
+                },
+                Transform::identity(),
+                None,
+            );
+        },
+    );
 }

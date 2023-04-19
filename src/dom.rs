@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 
 use html5ever::{tendril::StrTendril, tree_builder::TreeSink, QualName};
+use html_tags::ElementOwned;
+use lightningcss::bundler::SourceProvider;
 use slotmap::{new_key_type, HopSlotMap};
 
 new_key_type! {
@@ -35,6 +37,8 @@ pub enum Node {
         qualified_name: QualName,
         parent: NodeHandle,
         children: Vec<NodeHandle>,
+        width: Option<f32>,
+        height: Option<f32>,
     },
 
     /// A Processing instruction.
@@ -47,8 +51,13 @@ pub enum Node {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Default)]
 pub struct Dom {
-    pub map: HopSlotMap<NodeHandle, Node>,
+    map: HopSlotMap<NodeHandle, Node>,
     pub document: Option<NodeHandle>,
+}
+impl Dom {
+    pub fn map(&self) -> &HopSlotMap<NodeHandle, Node> {
+        &self.map
+    }
 }
 
 impl TreeSink for Dom {
@@ -86,7 +95,7 @@ impl TreeSink for Dom {
     ) -> Self::Handle {
         let mut elem = html_tags::ElementOwned::from_tag(&name.local);
         for attr in attrs {
-            elem.set_attr(&attr.name.local, attr.value.to_string());
+            elem.set_attr(&attr.name.local, attr.value);
         }
 
         let parent = self.get_document();
@@ -95,6 +104,8 @@ impl TreeSink for Dom {
             qualified_name: name,
             parent,
             children: Vec::new(),
+            width: None,
+            height: None,
         })
     }
 
@@ -183,7 +194,7 @@ impl TreeSink for Dom {
         match &mut self.map[target] {
             Node::Element { elem, .. } => {
                 for attr in attrs {
-                    elem.set_attr(&attr.name.local, attr.value.to_string());
+                    elem.set_attr(&attr.name.local, attr.value);
                 }
             }
             _ => panic!("Not an element"),
@@ -225,5 +236,70 @@ mod test {
         };
 
         println!("{dom:#?}");
+    }
+}
+
+pub struct SyncDom<'dom>(&'dom Dom);
+unsafe impl<'dom> Send for SyncDom<'dom> {}
+unsafe impl<'dom> Sync for SyncDom<'dom> {}
+impl<'dom> SyncDom<'dom> {
+    pub const unsafe fn new(dom: &'dom Dom) -> Self {
+        Self(dom)
+    }
+    pub const fn dom(&self) -> &Dom {
+        self.0
+    }
+}
+
+pub struct ElemSourceProvider<'dom>(pub SyncDom<'dom>, pub NodeHandle);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceProviderError {
+    StyleHasWrongChildren,
+}
+impl std::fmt::Display for SourceProviderError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::StyleHasWrongChildren => {
+                write!(f, "Style element has wrong children")
+            }
+        }
+    }
+}
+impl std::error::Error for SourceProviderError {}
+
+impl<'elem> SourceProvider for ElemSourceProvider<'elem> {
+    type Error = SourceProviderError;
+
+    fn read<'a>(&'a self, _: &std::path::Path) -> Result<&'a str, Self::Error> {
+        let &text_handle = match self.0.dom().map().get(self.1) {
+            Some(Node::Element {
+                elem: ElementOwned::Style(_),
+                children,
+                ..
+            }) => {
+                if children.len() != 1 {
+                    return Err(SourceProviderError::StyleHasWrongChildren);
+                }
+
+                let handle = unsafe { children.get_unchecked(0) };
+
+                handle
+            }
+            _ => panic!("Not an element"),
+        };
+
+        match self.0.dom().map().get(text_handle) {
+            Some(Node::Text { contents }) => Ok(contents),
+            _ => unreachable!(),
+        }
+    }
+
+    fn resolve(
+        &self,
+        specifier: &str,
+        originating_file: &std::path::Path,
+    ) -> Result<std::path::PathBuf, Self::Error> {
+        todo!()
     }
 }
