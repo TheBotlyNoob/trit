@@ -54,12 +54,13 @@ pub fn event_loop(
 
                 // TODO: external stylesheets
                 let style_nodes = dom.map().values().filter_map(|n| {
-                    if let Node::Element { elem, children, .. } = n {
-                        if let ElementOwned::Style(_) = elem {
-                            children.get(0)
-                        } else {
-                            None
-                        }
+                    if let Node::Element {
+                        elem: ElementOwned::Style(_),
+                        children,
+                        ..
+                    } = n
+                    {
+                        children.get(0)
                     } else {
                         None
                     }

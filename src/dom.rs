@@ -1,6 +1,8 @@
+#![allow(clippy::future_not_send)]
+
 use html5ever::{tendril::StrTendril, tree_builder::TreeSink, QualName};
 use lightningcss::rules::CssRuleList;
-use self_cell::self_cell;
+use ouroboros::self_referencing;
 use slotmap::{new_key_type, HopSlotMap};
 use std::borrow::Cow;
 
@@ -18,14 +20,16 @@ pub struct Doctype {
     system_id: StrTendril,
 }
 
-self_cell! {
-    struct StyleSheet {
-        owner: StrTendril,
-        #[not_covariant]
-        dependent: CssRuleList,
-    }
-
-    impl {Debug}
+#[self_referencing]
+#[derive(Debug)]
+pub struct StyleSheet {
+    pub contents: StrTendril,
+    #[borrows(contents)]
+    #[not_covariant]
+    pub rules: Result<
+        CssRuleList<'this>,
+        cssparser::ParseError<'this, lightningcss::error::ParserError<'this>>,
+    >,
 }
 
 /// The different kinds of nodes in the DOM.
@@ -65,7 +69,7 @@ pub struct Dom {
     pub document: Option<NodeHandle>,
 }
 impl Dom {
-    pub fn map(&self) -> &HopSlotMap<NodeHandle, Node> {
+    pub const fn map(&self) -> &HopSlotMap<NodeHandle, Node> {
         &self.map
     }
 }
@@ -112,17 +116,18 @@ impl TreeSink for Dom {
         let parent = self.get_document();
 
         let children = if let html_tags::ElementOwned::Style(_) = elem {
-            if let Ok(stylesheet) = StyleSheet::try_new(StrTendril::from(""), |contents| {
+            let stylesheet = StyleSheet::new(StrTendril::from(""), |contents| {
                 let mut input = cssparser::ParserInput::new(contents);
                 let mut parser = cssparser::Parser::new(&mut input);
-                CssRuleList::parse(&mut parser, &Default::default())
-            }) {
-                let style = self.map.insert(Node::StyleSheet(stylesheet));
+                CssRuleList::parse(
+                    &mut parser,
+                    &lightningcss::stylesheet::ParserOptions::default(),
+                )
+            });
 
-                vec![style]
-            } else {
-                vec![]
-            }
+            let style = self.map.insert(Node::StyleSheet(stylesheet));
+
+            vec![style]
         } else {
             vec![]
         };
