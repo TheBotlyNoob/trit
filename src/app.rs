@@ -53,18 +53,33 @@ pub fn event_loop(
                     .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == root));
 
                 // TODO: external stylesheets
-                let style_nodes = dom
-                    .map()
-                    .values()
-                    .filter(|n| matches!(n, Node::Element { elem, .. } if matches!(elem, ElementOwned::Style(_))));
-                
+                let style_nodes = dom.map().values().filter_map(|n| {
+                    if let Node::Element { elem, children, .. } = n {
+                        if let ElementOwned::Style(_) = elem {
+                            children.get(0)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                });
+
                 for node in root_nodes {
                     let Node::Element { elem, children, .. } = node else {
                         continue; // this can't happen 
                     };
 
                     if !matches!(elem, ElementOwned::Script(_) | ElementOwned::Style(_)) {
-                      render_text(&dom, elem, children, &mut pixmap, &mut buffer, &mut font_system, &mut swash_cache);
+                        render_text(
+                            &dom,
+                            elem,
+                            children,
+                            &mut pixmap,
+                            &mut buffer,
+                            &mut font_system,
+                            &mut swash_cache,
+                        );
                     }
                 }
 
@@ -136,11 +151,19 @@ fn rounded_rect(rect: Rect, border_radius: f32) -> Path {
     pb.finish().unwrap()
 }
 
-fn render_text(dom: &Dom, elem: &ElementOwned, children: &Vec<NodeHandle>, pixmap: &mut Pixmap, buffer: &mut Buffer, font_system: &mut FontSystem, swash_cache: &mut SwashCache) {
+fn render_text(
+    dom: &Dom,
+    elem: &ElementOwned,
+    children: &Vec<NodeHandle>,
+    pixmap: &mut Pixmap,
+    buffer: &mut Buffer,
+    font_system: &mut FontSystem,
+    swash_cache: &mut SwashCache,
+) {
     let mut text = String::new();
     for &child in children {
         let node = dom.map().get(child);
-        if let Some(Node::Text { contents }) = node {
+        if let Some(Node::Text(contents)) = node {
             text.push_str(if matches!(elem, ElementOwned::Pre(_)) {
                 contents
             } else {
@@ -156,19 +179,16 @@ fn render_text(dom: &Dom, elem: &ElementOwned, children: &Vec<NodeHandle>, pixma
         cosmic_text::Color::rgb(0, 0, 0),
         |x, y, w, h, color| {
             #[allow(clippy::cast_precision_loss)]
-            let rect =
-                Rect::from_xywh(x as _, y as _, w as _, h as _).unwrap();
+            let rect = Rect::from_xywh(x as _, y as _, w as _, h as _).unwrap();
             pixmap.fill_rect(
                 rect,
                 &Paint {
-                    shader: tiny_skia::Shader::SolidColor(
-                        tiny_skia::Color::from_rgba8(
-                            color.r(),
-                            color.g(),
-                            color.b(),
-                            color.a(),
-                        ),
-                    ),
+                    shader: tiny_skia::Shader::SolidColor(tiny_skia::Color::from_rgba8(
+                        color.r(),
+                        color.g(),
+                        color.b(),
+                        color.a(),
+                    )),
                     anti_alias: true,
                     ..Default::default()
                 },

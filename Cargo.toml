@@ -12,8 +12,9 @@ cosmic-text = "0.8.0"
 cssparser = "0.29.6"
 html-tags = "0.0"
 html5ever = "0.26.0"
-lightningcss = { version = "1.0.0-alpha.40", features = ["bundler"] }
+lightningcss = "1.0.0-alpha.40"
 reqwest = "0.11.16"
+self_cell = "0.10.2"
 slotmap = "1.0.6"
 softbuffer = "0.2.0"
 tiny-skia = { version = "0.8.3", default-features = false, features = [

@@ -1,9 +1,8 @@
-use std::borrow::Cow;
-
 use html5ever::{tendril::StrTendril, tree_builder::TreeSink, QualName};
-use html_tags::ElementOwned;
-use lightningcss::bundler::SourceProvider;
+use lightningcss::rules::CssRuleList;
+use self_cell::self_cell;
 use slotmap::{new_key_type, HopSlotMap};
+use std::borrow::Cow;
 
 new_key_type! {
     pub struct NodeHandle;
@@ -12,11 +11,21 @@ new_key_type! {
 /// [document type declaration on wikipedia][dtd wiki].
 ///
 /// [dtd wiki]: https://en.wikipedia.org/wiki/Document_type_declaration
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Doctype {
     name: StrTendril,
     public_id: StrTendril,
     system_id: StrTendril,
+}
+
+self_cell! {
+    struct StyleSheet {
+        owner: StrTendril,
+        #[not_covariant]
+        dependent: CssRuleList,
+    }
+
+    impl {Debug}
 }
 
 /// The different kinds of nodes in the DOM.
@@ -26,10 +35,10 @@ pub enum Node {
     Document(Option<Doctype>),
 
     /// A text node.
-    Text { contents: StrTendril },
+    Text(StrTendril),
 
     /// A comment.
-    Comment { contents: StrTendril },
+    Comment(StrTendril),
 
     /// An element with attributes.
     Element {
@@ -37,9 +46,10 @@ pub enum Node {
         qualified_name: QualName,
         parent: NodeHandle,
         children: Vec<NodeHandle>,
-        width: Option<f32>,
-        height: Option<f32>,
     },
+
+    /// A stylesheet.
+    StyleSheet(StyleSheet),
 
     /// A Processing instruction.
     ProcessingInstruction {
@@ -60,6 +70,7 @@ impl Dom {
     }
 }
 
+#[allow(dead_code, unused_variables)]
 impl TreeSink for Dom {
     type Handle = NodeHandle;
     type Output = Self;
@@ -99,18 +110,33 @@ impl TreeSink for Dom {
         }
 
         let parent = self.get_document();
+
+        let children = if let html_tags::ElementOwned::Style(_) = elem {
+            if let Ok(stylesheet) = StyleSheet::try_new(StrTendril::from(""), |contents| {
+                let mut input = cssparser::ParserInput::new(contents);
+                let mut parser = cssparser::Parser::new(&mut input);
+                CssRuleList::parse(&mut parser, &Default::default())
+            }) {
+                let style = self.map.insert(Node::StyleSheet(stylesheet));
+
+                vec![style]
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        };
+
         self.map.insert(Node::Element {
             elem,
             qualified_name: name,
             parent,
-            children: Vec::new(),
-            width: None,
-            height: None,
+            children,
         })
     }
 
     fn create_comment(&mut self, contents: StrTendril) -> Self::Handle {
-        self.map.insert(Node::Comment { contents })
+        self.map.insert(Node::Comment(contents))
     }
 
     fn create_pi(&mut self, target: StrTendril, contents: StrTendril) -> Self::Handle {
@@ -133,8 +159,8 @@ impl TreeSink for Dom {
                     _ => panic!("Not an element"),
                 }
             }
-            html5ever::tree_builder::NodeOrText::AppendText(contents) => {
-                let text = self.map.insert(Node::Text { contents });
+            html5ever::tree_builder::NodeOrText::AppendText(text) => {
+                let text = self.map.insert(Node::Text(text));
                 match &mut self.map[parent] {
                     Node::Element { children, .. } => {
                         children.push(text);
@@ -228,78 +254,9 @@ mod test {
 
     #[test]
     fn basic() {
-        let dom = {
-            let dom = parse_document(Dom::default(), ParseOpts::default());
-
-            let html = std::fs::read_to_string("test.html").unwrap();
-            dom.one(html)
-        };
+        let dom = parse_document(Dom::default(), ParseOpts::default());
+        let dom = dom.one(include_str!("../test.html"));
 
         println!("{dom:#?}");
-    }
-}
-
-pub struct SyncDom<'dom>(&'dom Dom);
-unsafe impl<'dom> Send for SyncDom<'dom> {}
-unsafe impl<'dom> Sync for SyncDom<'dom> {}
-impl<'dom> SyncDom<'dom> {
-    pub const unsafe fn new(dom: &'dom Dom) -> Self {
-        Self(dom)
-    }
-    pub const fn dom(&self) -> &Dom {
-        self.0
-    }
-}
-
-pub struct ElemSourceProvider<'dom>(pub SyncDom<'dom>, pub NodeHandle);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SourceProviderError {
-    StyleHasWrongChildren,
-}
-impl std::fmt::Display for SourceProviderError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::StyleHasWrongChildren => {
-                write!(f, "Style element has wrong children")
-            }
-        }
-    }
-}
-impl std::error::Error for SourceProviderError {}
-
-impl<'elem> SourceProvider for ElemSourceProvider<'elem> {
-    type Error = SourceProviderError;
-
-    fn read<'a>(&'a self, _: &std::path::Path) -> Result<&'a str, Self::Error> {
-        let &text_handle = match self.0.dom().map().get(self.1) {
-            Some(Node::Element {
-                elem: ElementOwned::Style(_),
-                children,
-                ..
-            }) => {
-                if children.len() != 1 {
-                    return Err(SourceProviderError::StyleHasWrongChildren);
-                }
-
-                let handle = unsafe { children.get_unchecked(0) };
-
-                handle
-            }
-            _ => panic!("Not an element"),
-        };
-
-        match self.0.dom().map().get(text_handle) {
-            Some(Node::Text { contents }) => Ok(contents),
-            _ => unreachable!(),
-        }
-    }
-
-    fn resolve(
-        &self,
-        specifier: &str,
-        originating_file: &std::path::Path,
-    ) -> Result<std::path::PathBuf, Self::Error> {
-        todo!()
     }
 }
