@@ -19,6 +19,12 @@ pub fn event_loop(
     mut gfx_ctx: GraphicsContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut font_system = FontSystem::new();
+    // TODO: add a few more common fonts here
+    // i.e. times new roman, consolas, new roman, fira mono
+    font_system
+        .db_mut()
+        .load_font_data(include_bytes!("assets/Arial.ttf").to_vec()); // fallback if the user has no fonts
+
     let mut swash_cache = SwashCache::new();
     let default_metrics = Metrics::new(14.0, 20.0);
 
@@ -27,7 +33,7 @@ pub fn event_loop(
     let mut dom = {
         let dom = parse_document(Dom::default(), ParseOpts::default());
 
-        dom.one(include_str!("../test.html"))
+        dom.one(include_str!("assets/test.html"))
     };
 
     let mut url = String::with_capacity(16);
