@@ -1,6 +1,8 @@
 #![allow(clippy::future_not_send)]
 
-use html5ever::{tendril::StrTendril, tree_builder::TreeSink, QualName};
+use html5ever::{
+    local_name, namespace_url, ns, tendril::StrTendril, tree_builder::TreeSink, QualName,
+};
 use lightningcss::rules::CssRuleList;
 use ouroboros::self_referencing;
 use slotmap::{new_key_type, HopSlotMap};
@@ -109,25 +111,37 @@ impl TreeSink for Dom {
         _flags: html5ever::tree_builder::ElementFlags,
     ) -> Self::Handle {
         let mut elem = html_tags::ElementOwned::from_tag(&name.local);
+        let mut style = None;
         for attr in attrs {
+            if attr.name == QualName::new(None, ns!(), local_name!("style")) {
+                style = Some(attr.value.clone());
+            }
             elem.set_attr(&attr.name.local, attr.value);
         }
 
         let parent = self.get_document();
 
-        let children = if let html_tags::ElementOwned::Style(_) = elem {
-            let stylesheet = StyleSheet::new(StrTendril::from(""), |contents| {
-                let mut input = cssparser::ParserInput::new(contents);
-                let mut parser = cssparser::Parser::new(&mut input);
-                CssRuleList::parse(
-                    &mut parser,
-                    &lightningcss::stylesheet::ParserOptions::default(),
-                )
-            });
+        macro_rules! style {
+            ($content:expr) => {{
+                let stylesheet = StyleSheet::new(StrTendril::from(""), |contents| {
+                    let mut input = cssparser::ParserInput::new(contents);
+                    let mut parser = cssparser::Parser::new(&mut input);
+                    CssRuleList::parse(
+                        &mut parser,
+                        &lightningcss::stylesheet::ParserOptions::default(),
+                    )
+                });
 
-            let style = self.map.insert(Node::StyleSheet(stylesheet));
+                let style = self.map.insert(Node::StyleSheet(stylesheet));
 
-            vec![style]
+                vec![style]
+            }};
+        }
+
+        let children = if matches!(elem, html_tags::ElementOwned::Style(_)) {
+            style!(StrTendril::new())
+        } else if let Some(style) = style {
+            style!(style)
         } else {
             vec![]
         };

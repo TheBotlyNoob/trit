@@ -53,18 +53,22 @@ pub fn event_loop(
                     .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == root));
 
                 // TODO: external stylesheets
-                let style_nodes = dom.map().values().filter_map(|n| {
-                    if let Node::Element {
-                        elem: ElementOwned::Style(_),
-                        children,
-                        ..
-                    } = n
-                    {
-                        children.get(0)
-                    } else {
-                        None
-                    }
-                });
+                let style_nodes = dom
+                    .map()
+                    .values()
+                    .filter_map(|n| {
+                        if let Node::Element {
+                            elem: ElementOwned::Style(_),
+                            children,
+                            ..
+                        } = n
+                        {
+                            children.get(0)
+                        } else {
+                            None
+                        }
+                    })
+                    .map(|&n| unsafe { dom.map().get_unchecked(n) });
 
                 for node in root_nodes {
                     let Node::Element { elem, children, .. } = node else {
@@ -112,7 +116,7 @@ pub fn event_loop(
                                 control_flow.set_exit();
                             }
                             winit::event::VirtualKeyCode::Return => {
-                                tracing::warn!("TODO: navigate to {url}");
+                                tracing::warn!(?url, "TODO: navigate");
                             }
                             winit::event::VirtualKeyCode::Back => {
                                 url.pop();
@@ -126,7 +130,7 @@ pub fn event_loop(
             Event::WindowEvent {
                 event: WindowEvent::ReceivedCharacter(c),
                 ..
-            } => {
+            } if !['\r', '\n'].contains(&c) => {
                 url.push(c);
             }
             _ => {}

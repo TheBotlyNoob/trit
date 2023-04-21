@@ -2024,32 +2024,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reb"
-version = "0.1.0"
-dependencies = [
- "Boa",
- "bytemuck",
- "console_error_panic_hook",
- "cosmic-text",
- "cssparser",
- "html-tags",
- "html5ever",
- "lightningcss",
- "lol_alloc",
- "ouroboros",
- "poll-promise",
- "reqwest",
- "slotmap",
- "softbuffer",
- "tiny-skia",
- "tracing",
- "tracing-subscriber",
- "tracing-wasm",
- "web-sys",
- "winit",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2790,6 +2764,32 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "trit"
+version = "0.1.0"
+dependencies = [
+ "Boa",
+ "bytemuck",
+ "console_error_panic_hook",
+ "cosmic-text",
+ "cssparser",
+ "html-tags",
+ "html5ever",
+ "lightningcss",
+ "lol_alloc",
+ "ouroboros",
+ "poll-promise",
+ "reqwest",
+ "slotmap",
+ "softbuffer",
+ "tiny-skia",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-wasm",
+ "web-sys",
+ "winit",
 ]
 
 [[package]]
