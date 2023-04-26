@@ -76,6 +76,10 @@ pub fn event_loop(
                     })
                     .map(|&n| unsafe { dom.map().get_unchecked(n) });
 
+                for node in style_nodes {
+                    tracing::info!("{node:#?}");
+                }
+
                 for node in root_nodes {
                     let Node::Element { elem, children, .. } = node else {
                         continue; // this can't happen 
