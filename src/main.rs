@@ -1,13 +1,16 @@
+#![warn(clippy::nursery, clippy::pedantic)]
+
 use softbuffer::GraphicsContext;
 use winit::{event_loop::EventLoop, window::WindowBuilder};
 
 mod app;
+mod dom;
 
 // bootstrap for both native and wasm - the main code is in `app.rs`
 
-async fn main_() -> Result<(), Box<dyn std::error::Error>> {
+fn main_() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_title("Reb").build(&event_loop)?;
+    let window = WindowBuilder::new().with_title("Trit").build(&event_loop)?;
 
     #[cfg(target_arch = "wasm32")]
     {
@@ -41,33 +44,20 @@ async fn main_() -> Result<(), Box<dyn std::error::Error>> {
     // SAFETY: both the window and the graphics context live for the life of main
     let gfx_ctx = unsafe { GraphicsContext::new(&window, &window) }?;
 
-    app::event_loop(window, event_loop, gfx_ctx).await
+    app::event_loop(window, event_loop, gfx_ctx)
 }
 
 fn main() {
-    let fut = async {
-        if let Err(e) = main_().await {
-            tracing::error!("Error: {}", e);
-        }
-    };
-
     #[cfg(target_arch = "wasm32")]
     {
         console_error_panic_hook::set_once();
         tracing_wasm::set_as_global_default();
-
-        wasm_bindgen_futures::spawn_local(fut);
     }
-
     #[cfg(not(target_arch = "wasm32"))]
-    {
-        tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt::init();
 
-        let rt = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-        rt.block_on(fut);
+    if let Err(e) = main_() {
+        tracing::error!(?e);
     }
 }
 #[cfg(target_arch = "wasm32")]

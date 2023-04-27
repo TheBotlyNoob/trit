@@ -1,0 +1,1163 @@
+/*
+    The user agent stylesheet for trit.
+    This is based on the user agent stylesheet for Firefox 111.0 and the Writ CSS library. 
+*/
+
+/*!
+* Writ v1.0.4
+*
+* Copyright © 2015, Curtis McEnroe <curtis@cmcenroe.me>
+*
+* https://cmcenroe.me/writ/LICENSE (ISC)
+*/
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@namespace url(http://www.w3.org/1999/xhtml);
+
+@namespace xul url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
+
+@font-face {
+    font-family: -moz-bullet-font;
+    src: url(data:font/woff2;base64,d09GMgABAAAAAARYAAwAAAAACqAAAAQFAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP0ZGVE0cBmAAgwIRCAqKDIcYATYCJAMsCxgABCAFg2AHIBtDCFGUrM0MyM/DGJyndUclpZwnU8QPQ6wsFOHO+/yHNvV9IEqSQgsVJW2p+uZkohKbVExPEz/JUW7zk6rzYH9723UJ/4DzBII8CSzwgFMOOE4KW2rjAmh4qQWSiid60f7Y9FsXScfUpeluagFqTTQYyoQaQSubXil0lHRsBehAI9KofG/6ogF9/Hl6lBd920LmeTxj8JXBfFWKwYAY3QsAAXD17ZAB4M6Ocv/nsZlkaTl0gLipewIQEMB2d9lKDAT1ZjP/F7jmWsQ3wn8AZvZFgIIC7ESh4AP1iFb4nPnfWyJgcQArpUWqW9W96j71kHr/L9a/dNRbj+8/ujXLWCMMFYVYiXoEaZQ4YOC/E7Dkz3JEjaokxAP6i3hIUjv9fwYyE6I3yIozKkaGN63fP36aeLJmxlRZwZiFziPrMVvOlnCF98SQJfGO/Xllv/FnWAcEjrMqaMCPwVmktCDO5zzxcXqeKS+QFxYnvJLFVzKZAFcKnlZRwHEPVM3mXxNt2gdZEpkKaIAG9gbgDTU5SOYDcmX7Rr61evEA1U+1/3SMb6FFtUqh55nYleE95j2zPNxzdlnGoR5xu/PxQKzb7bFaFLvl79Z54Lx9OH+g0/PPYlcsNo/nwP2V2vsHUHsV4KqEsd+e2r6Fu2v7abkfvsb65b41uwvRvqewH25kTntqolbYsEr5DAqrX97a0jrBLjFRExVHR2dH1Za6unyZfCVZHqQP0BtYjuUYlg9J6SurcrTEiOr26m5xcuTW4Sp3ljkUYWJ9+/iVmzbzPpcuXnGeqU3U7IKjz/qeKSSCltyhuSoxkqqTZX+DXt/OMmAikC8SzVD0jg3dbhIE0eUqc04UFFrxCSXzFxgHclzRMPe0ocOjiKRoSZISE0OtpkBjECdxkkRM1KiaJV0ed0V5umBP1wyUPL2ZBGLSDh5itIHahHRF0CY5nZMGib6T3cOmDvcTSZKuPiFJFpPRGNTIOq7jl5OjDiGIoo6qEE0QtfQJ3VYUD2RZvbm5uWWCWOgR4HXAk5GxLEO0izhLdvPTfpTV3xeOnOfT96uR53CdPrPq+P9HZvzO4QCMmDr7lTcNZorT6iMOYgI+IxClMzeCspeoLt5ABGSpta6gRZmQSnzk9e9jmOAYKC7RsyGMYaB6MpbNKMiRq2U6vI0yPZuTMiODFytMrGEBi7pjGgkAMoaNLGOFSoYceaZMx1+XTC/UNpmRzY1nmwT7AIcK+fK5lYNjz893lwMTuXlD2AKl8Md+24AxitRaLH/MUMqd9z862owy/bZTuZUqs1iRQop0KdLgZwPc9JS0lprnkef1gitBCRhjgV+vjGK8BfIV8CrlVghj1vIyZfyC/AJvqbsQYAEA/v+IAQA=);
+}
+
+:-moz-has-dir-attr {
+    unicode-bidi: isolate;
+}
+
+:-moz-dir-attr-rtl {
+    direction: rtl;
+}
+
+:-moz-dir-attr-ltr {
+    direction: ltr;
+}
+
+:-moz-dir-attr-like-auto:dir(ltr) {
+    direction: ltr;
+}
+
+:-moz-dir-attr-like-auto:dir(rtl) {
+    direction: rtl;
+}
+
+input[type="tel"]:dir(ltr) {
+    direction: ltr;
+}
+
+address,
+article,
+aside,
+bdi,
+blockquote,
+body,
+caption,
+center,
+col,
+colgroup,
+dd,
+dir,
+div,
+dl,
+dt,
+fieldset,
+figcaption,
+figure,
+footer,
+form,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+header,
+hgroup,
+hr,
+html,
+legend,
+li,
+listing,
+main,
+marquee,
+menu,
+nav,
+noframes,
+ol,
+output,
+p,
+plaintext,
+pre,
+section,
+summary,
+table,
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr,
+ul,
+xmp {
+    unicode-bidi: isolate;
+}
+
+bdo,
+bdo:-moz-has-dir-attr {
+    unicode-bidi: isolate-override;
+}
+
+pre:-moz-dir-attr-like-auto,
+textarea:-moz-dir-attr-like-auto {
+    unicode-bidi: plaintext;
+}
+
+body {
+    margin: 8px;
+    color: #222;
+    margin: 1.5rem 1ch;
+}
+
+dl,
+multicol,
+p {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+}
+
+blockquote,
+dd,
+figure {
+    margin-inline-start: 40px;
+}
+
+blockquote,
+figure {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-end: 40px;
+}
+
+address {
+    font-style: italic;
+}
+
+address,
+article,
+aside,
+body,
+center,
+dd,
+details,
+div,
+dt,
+figcaption,
+footer,
+form,
+h1,
+header,
+hgroup,
+html,
+nav,
+section,
+summary {
+    display: block;
+}
+
+center {
+    text-align: -moz-center;
+}
+
+h1 {
+    margin-block-start: 0.67em;
+    margin-block-end: 0.67em;
+}
+
+:is(article, aside, nav, section) h1,
+h2 {
+    display: block;
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-block-start: 0.83em;
+    margin-block-end: 0.83em;
+}
+
+:is(article, aside, nav, section) :is(article, aside, nav, section) h1,
+h3 {
+    display: block;
+    font-size: 1.17em;
+    font-weight: 700;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+}
+
+:is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    h1,
+h4 {
+    display: block;
+    font-size: 1em;
+    font-weight: 700;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+}
+
+:is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    h1,
+h5 {
+    display: block;
+    font-size: 0.83em;
+    font-weight: 700;
+    margin-block-start: 1.67em;
+    margin-block-end: 1.67em;
+}
+
+:is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    :is(article, aside, nav, section)
+    h1,
+h6 {
+    display: block;
+    font-size: 0.67em;
+    font-weight: 700;
+    margin-block-start: 2.33em;
+    margin-block-end: 2.33em;
+}
+
+listing {
+    font-size: medium;
+}
+
+listing,
+plaintext,
+pre,
+xmp {
+    display: block;
+    font-family: -moz-fixed;
+    white-space: pre;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+}
+
+table {
+    display: table;
+    border-spacing: 2px;
+    box-sizing: border-box;
+    text-indent: 0;
+}
+
+table[align="left"] {
+    float: left;
+}
+
+table[align="right"] {
+    float: right;
+    text-align: start;
+}
+
+table[rules] {
+    border-width: thin;
+    border-style: hidden;
+}
+
+table:-moz-table-border-nonzero {
+    border-width: thin;
+    border-style: outset;
+}
+
+table[frame] {
+    border: thin hidden;
+}
+
+table[frame="void"] {
+    border-style: hidden;
+}
+
+table[frame="above"] {
+    border-style: outset hidden hidden;
+}
+
+table[frame="below"] {
+    border-style: hidden hidden outset;
+}
+
+table[frame="lhs"] {
+    border-style: hidden hidden hidden outset;
+}
+
+table[frame="rhs"] {
+    border-style: hidden outset hidden hidden;
+}
+
+table[frame="hsides"] {
+    border-style: outset hidden;
+}
+
+table[frame="vsides"] {
+    border-style: hidden outset;
+}
+
+table[frame="border"],
+table[frame="box"] {
+    border-style: outset;
+}
+
+table:-moz-table-border-nonzero > * > td,
+table:-moz-table-border-nonzero > * > th,
+table:-moz-table-border-nonzero > * > tr > td,
+table:-moz-table-border-nonzero > * > tr > th,
+table:-moz-table-border-nonzero > td,
+table:-moz-table-border-nonzero > th {
+    border-width: thin;
+    border-style: inset;
+}
+
+table[rules]:not([rules="none"], [rules=""]) {
+    border-collapse: collapse;
+}
+
+table[rules]:not([rules=""]) > * > tr > td,
+table[rules]:not([rules=""]) > * > tr > th,
+table[rules]:not([rules=""]) > td,
+table[rules]:not([rules=""]) > th,
+table[rules]:not([rules=""]) > tr > td,
+table[rules]:not([rules=""]) > tr > th {
+    border-width: thin;
+    border-style: none;
+}
+
+table[rules][rules="none"] > * > tr > td,
+table[rules][rules="none"] > * > tr > th,
+table[rules][rules="none"] > td,
+table[rules][rules="none"] > th,
+table[rules][rules="none"] > tr > td,
+table[rules][rules="none"] > tr > th {
+    border-width: thin;
+    border-style: none;
+}
+
+table[rules][rules="all"] > * > tr > td,
+table[rules][rules="all"] > * > tr > th,
+table[rules][rules="all"] > td,
+table[rules][rules="all"] > th,
+table[rules][rules="all"] > tr > td,
+table[rules][rules="all"] > tr > th {
+    border-width: thin;
+    border-style: solid;
+}
+
+table[rules][rules="rows"] > * > tr,
+table[rules][rules="rows"] > tr {
+    border-block-end-style: solid;
+}
+
+table[rules][rules="cols"] > * > tr > td,
+table[rules][rules="cols"] > * > tr > th,
+table[rules][rules="cols"] > tr > td,
+table[rules][rules="cols"] > tr > th,
+table[rules][rules="groups"] > colgroup {
+    border-inline-start-width: thin;
+    border-inline-end-width: thin;
+    border-inline-start-style: solid;
+    border-inline-end-style: solid;
+}
+
+table[rules][rules="groups"] > tbody,
+table[rules][rules="groups"] > tfoot,
+table[rules][rules="groups"] > thead,
+table[rules][rules="rows"] > * > tr,
+table[rules][rules="rows"] > tr {
+    border-block-start-width: thin;
+    border-block-end-width: thin;
+    border-block-start-style: solid;
+}
+
+caption {
+    display: table-caption;
+    text-align: center;
+}
+
+table[align="center"] > caption {
+    margin-inline-start: auto;
+    margin-inline-end: auto;
+}
+
+table[align="center"] > caption[align="left"]:dir(ltr) {
+    margin-inline-end: 0;
+}
+
+table[align="center"] > caption[align="left"]:dir(rtl),
+table[align="center"] > caption[align="right"]:dir(ltr) {
+    margin-inline-start: 0;
+}
+
+table[align="center"] > caption[align="right"]:dir(rtl) {
+    margin-inline-end: 0;
+}
+
+td,
+th,
+tr {
+    vertical-align: inherit;
+}
+
+tr {
+    display: table-row;
+}
+
+col {
+    display: table-column;
+}
+
+colgroup {
+    display: table-column-group;
+}
+
+tbody {
+    display: table-row-group;
+}
+
+thead {
+    display: table-header-group;
+}
+
+tfoot {
+    display: table-footer-group;
+}
+
+table > tr,
+tbody,
+tfoot,
+thead {
+    vertical-align: middle;
+}
+
+td,
+th {
+    display: table-cell;
+}
+
+td {
+    text-align: unset;
+}
+
+th {
+    text-align: -moz-center-or-inherit;
+}
+
+table > form:-moz-is-html,
+tbody > form:-moz-is-html,
+tfoot > form:-moz-is-html,
+thead > form:-moz-is-html,
+tr > form:-moz-is-html {
+    display: none !important;
+}
+
+table[bordercolor] > * > tr,
+table[bordercolor] > * > tr > td,
+table[bordercolor] > * > tr > th,
+table[bordercolor] > col,
+table[bordercolor] > colgroup,
+table[bordercolor] > tbody,
+table[bordercolor] > tfoot,
+table[bordercolor] > thead,
+table[bordercolor] > tr,
+table[bordercolor] > tr > td,
+table[bordercolor] > tr > th {
+    border-color: inherit;
+}
+
+q:before {
+    content: open-quote;
+}
+
+q:after {
+    content: close-quote;
+}
+
+b,
+strong {
+    font-weight: bolder;
+}
+
+cite,
+dfn,
+em,
+i,
+var {
+    font-style: italic;
+}
+
+code,
+kbd,
+samp,
+tt {
+    font-family: -moz-fixed;
+}
+
+u {
+    text-decoration: underline;
+}
+
+del,
+s,
+strike {
+    text-decoration: line-through;
+}
+
+big {
+    font-size: larger;
+}
+
+small {
+    font-size: 0.833em;
+}
+
+sub {
+    vertical-align: sub;
+}
+
+sup {
+    vertical-align: super;
+}
+
+nobr {
+    white-space: nowrap;
+}
+
+mark {
+    background: Mark;
+    color: inherit;
+    background-color: #fe0;
+    padding: 1px;
+}
+
+abbr[title],
+acronym[title] {
+    text-decoration: dotted underline;
+}
+
+dir,
+menu,
+ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    padding-inline-start: 40px;
+}
+
+menu,
+ol,
+ul {
+    counter-reset: list-item;
+}
+
+ol {
+    display: block;
+    list-style-type: decimal;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    padding-inline-start: 40px;
+}
+
+li {
+    display: list-item;
+    text-align: match-parent;
+}
+
+:is(ul, ol, dir, menu, dl) dir,
+:is(ul, ol, dir, menu, dl) dl,
+:is(ul, ol, dir, menu, dl) menu,
+:is(ul, ol, dir, menu, dl) ol,
+:is(ul, ol, dir, menu, dl) ul {
+    margin-block-start: 0;
+    margin-block-end: 0;
+}
+
+:is(ol, ul, menu, dir) dir,
+:is(ol, ul, menu, dir) menu,
+:is(ol, ul, menu, dir) ul {
+    list-style-type: circle;
+}
+
+:is(ol, ul, menu, dir) :is(ol, ul, menu, dir) dir,
+:is(ol, ul, menu, dir) :is(ol, ul, menu, dir) menu,
+:is(ol, ul, menu, dir) :is(ol, ul, menu, dir) ul {
+    list-style-type: square;
+}
+
+hr {
+    color: gray;
+    margin-block-start: 0.5em;
+    margin-block-end: 0.5em;
+    margin-inline-start: auto;
+    margin-inline-end: auto;
+    overflow: hidden;
+    display: block;
+    margin: 0;
+    border: 0;
+    padding: 1.5rem 0 0;
+}
+
+hr[size="1"] {
+    border-style: solid none none;
+}
+
+img::before,
+input[type="image"]::before {
+    content: -moz-alt-content !important;
+    unicode-bidi: isolate;
+}
+
+object:-moz-broken > *|* {
+    vertical-align: inherit;
+}
+
+img[usemap],
+object[usemap] {
+    color: #00f;
+}
+
+frameset {
+    display: block !important;
+    overflow: clip;
+    border: 0 !important;
+}
+
+frame {
+    border-radius: 0 !important;
+}
+
+iframe {
+    border: 2px inset;
+}
+
+frameset,
+spacer {
+    position: static !important;
+    float: none !important;
+}
+
+canvas {
+    user-select: none;
+}
+
+body:focus-visible,
+html:focus-visible,
+iframe:focus-visible {
+    outline-style: none;
+}
+
+base,
+basefont,
+datalist,
+head,
+link,
+meta,
+noembed,
+noframes,
+param,
+rp,
+script,
+style,
+template,
+title {
+    display: none;
+}
+
+area {
+    display: none !important;
+}
+
+iframe:fullscreen {
+    border: 0 !important;
+    padding: unset !important;
+}
+
+details > summary:first-of-type {
+    display: list-item;
+    counter-increment: list-item 0;
+    list-style: disclosure-closed inside;
+}
+
+details[open] > summary:first-of-type {
+    list-style-type: disclosure-open;
+}
+
+video {
+    object-fit: contain;
+}
+
+video > img:-moz-native-anonymous {
+    object-fit: inherit !important;
+    object-position: inherit !important;
+}
+
+audio:not([controls]) {
+    display: none !important;
+}
+
+audio[controls] {
+    writing-mode: horizontal-tb !important;
+}
+
+*|*::-moz-html-canvas-content {
+    display: block !important;
+    transform: translate(0) !important;
+}
+
+video > .caption-box {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+::cue {
+    color: #fff;
+    white-space: pre-line;
+    background-color: rgba(0, 0, 0, 0.8);
+    font: 10px sans-serif;
+    font-size: var(--cue-font-size);
+    writing-mode: var(--cue-writing-mode, inherit);
+    overflow-wrap: break-word;
+}
+
+dialog {
+    position: absolute;
+    display: block;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    margin: auto;
+    border-width: initial;
+    border-style: solid;
+    border-color: initial;
+    border-image: initial;
+    padding: 1em;
+    background-color: Canvas;
+    color: CanvasText;
+    width: -moz-fit-content;
+    height: -moz-fit-content;
+}
+
+dialog:not([open]) {
+    display: none;
+}
+
+dialog:modal {
+    -moz-top-layer: top !important;
+    position: fixed;
+    overflow: auto;
+    visibility: visible;
+    inset-block-start: 0;
+    inset-block-end: 0;
+    max-width: calc(100% - 6px - 2em);
+    max-height: calc(100% - 6px - 2em);
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+marquee {
+    inline-size: -moz-available;
+    display: inline-block;
+    vertical-align: text-bottom;
+    text-align: start;
+}
+
+marquee:is([direction="up"], [direction="down"]) {
+    block-size: 200px;
+}
+
+ruby {
+    display: ruby;
+}
+
+rb {
+    display: ruby-base;
+}
+
+rt {
+    display: ruby-text;
+}
+
+rtc {
+    display: ruby-text-container;
+}
+
+rb,
+rt,
+rtc {
+    white-space: nowrap;
+}
+
+rt,
+rtc {
+    font-size: 50%;
+    -moz-min-font-size-ratio: 50%;
+    line-height: 1;
+}
+
+@media not (-moz-platform: windows) {
+    rt,
+    rtc {
+        font-variant-east-asian: ruby;
+    }
+}
+
+rt,
+rtc {
+    text-emphasis: none;
+}
+
+rt:lang(zh),
+rtc:lang(zh) {
+    ruby-align: center;
+}
+
+rt:lang(zh-TW),
+rtc:lang(zh-TW) {
+    font-size: 30%;
+    -moz-min-font-size-ratio: 30%;
+}
+
+rtc > rt {
+    font-size: unset;
+}
+
+rb,
+rt,
+rtc,
+ruby {
+    unicode-bidi: isolate;
+}
+
+slot {
+    display: contents;
+}
+
+@media (inverted-colors) {
+    img:not(picture > img),
+    picture,
+    video {
+        filter: invert(100%);
+    }
+}
+
+@media (scripting) {
+    noscript {
+        display: none !important;
+    }
+}
+
+@media (-moz-popover-enabled) {
+    [popover]:closed:not(dialog[open]) {
+        display: none;
+    }
+
+    dialog[popover]:not(:closed) {
+        display: block;
+    }
+
+    [popover] {
+        position: fixed;
+        inset: 0;
+        width: fit-content;
+        height: fit-content;
+        margin: auto;
+        border: solid;
+        padding: 0.25em;
+        overflow: auto;
+        color: CanvasText;
+        background-color: Canvas;
+    }
+
+    [popover]:open::backdrop {
+        position: fixed;
+        inset: 0;
+        pointer-events: none !important;
+        background-color: transparent;
+    }
+}
+
+html {
+    font-family: Palatino, Georgia, Lucida Bright, Book Antiqua, serif;
+    font-size: 16px;
+    line-height: 1.5rem;
+}
+
+code,
+kbd,
+pre,
+samp {
+    font-family: Consolas, Liberation Mono, Menlo, Courier, monospace;
+    font-size: 0.833rem;
+}
+
+kbd {
+    font-weight: 700;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+th {
+    font-weight: 400;
+}
+
+h1,
+h2,
+h3 {
+    font-size: 2.488em;
+    line-height: 3rem;
+}
+
+h2,
+h3 {
+    font-size: 2.074em;
+}
+
+h3 {
+    font-size: 1.728em;
+}
+
+h4 {
+    font-size: 1.44em;
+}
+
+h5 {
+    font-size: 1.2em;
+}
+
+h6 {
+    font-size: 1em;
+}
+
+blockquote,
+dl,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+ol,
+p,
+pre,
+table,
+ul {
+    margin: 1.5rem 0 0;
+}
+
+ol ol,
+ol ul,
+ul ol,
+ul ul {
+    margin: 0;
+}
+
+pre,
+table {
+    margin-bottom: -1px;
+}
+
+table {
+    line-height: calc(1.5rem - 1px);
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+}
+
+pre {
+    margin-top: calc(1.5rem - 1px);
+}
+
+code,
+kbd,
+pre,
+samp {
+    color: #111;
+}
+
+a,
+a code,
+header nav a:visited {
+    color: #00e;
+}
+
+a:visited,
+a:visited code {
+    color: #60b;
+}
+
+code,
+pre,
+samp,
+tfoot,
+thead {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+blockquote,
+ins,
+main aside {
+    border: solid rgba(0, 0, 0, 0.05);
+}
+
+code,
+pre,
+samp {
+    border: solid rgba(0, 0, 0, 0.1);
+}
+
+pre,
+td,
+th {
+    border-width: 1px;
+    padding: 0 0.5ch;
+}
+
+td,
+th {
+    border: solid #dbdbdb;
+}
+
+body > header {
+    text-align: center;
+}
+
+body > footer,
+main {
+    display: block;
+    max-width: 78ch;
+    margin: auto;
+}
+
+main aside,
+main figure {
+    float: right;
+    margin: 1.5rem 0 0 1ch;
+}
+
+blockquote,
+main aside {
+    border-width: 0 0 0 0.5ch;
+}
+
+main aside {
+    max-width: 26ch;
+    padding: 0 0 0 0.5ch;
+}
+
+blockquote {
+    margin-right: 3ch;
+    margin-left: 1.5ch;
+    padding: 0 0 0 1ch;
+}
+
+pre {
+    border-radius: 2px;
+    overflow-x: auto;
+}
+
+pre code {
+    border: 0;
+    padding: 0;
+    background-color: transparent;
+    white-space: inherit;
+}
+
+img {
+    max-width: 100%;
+}
+
+dd,
+ol,
+ul {
+    padding: 0 0 0 3ch;
+}
+
+dd {
+    margin: 0;
+}
+
+ul > li {
+    list-style-type: disc;
+}
+
+li ul > li {
+    list-style-type: circle;
+}
+
+li li ul > li {
+    list-style-type: square;
+}
+
+ol > li {
+    list-style-type: decimal;
+}
+
+li ol > li {
+    list-style-type: lower-roman;
+}
+
+li li ol > li {
+    list-style-type: lower-alpha;
+}
+
+nav ul {
+    padding: 0;
+    list-style-type: none;
+}
+
+nav ul li {
+    display: inline;
+    padding-left: 1ch;
+    white-space: nowrap;
+}
+
+nav ul li:first-child {
+    padding-left: 0;
+}
+
+a {
+    text-decoration: none;
+}
+
+sub,
+sup {
+    font-size: 0.75em;
+    line-height: 1em;
+}
+
+code,
+ins,
+samp {
+    border-width: 1px;
+}
+
+ins {
+    padding: 1px;
+    text-decoration: none;
+}
+
+code,
+samp {
+    border-radius: 2px;
+    padding: 0.1em 0.2em;
+    white-space: nowrap;
+}

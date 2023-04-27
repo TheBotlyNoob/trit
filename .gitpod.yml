@@ -1,3 +1,3 @@
 tasks:
   - init: cargo install trunk && rustup target add wasm32-unknown-unknown && trunk build
-  - command: trunk serve
+  - command: cargo install trunk && rustup target add wasm32-unknown-unknown && trunk serve
