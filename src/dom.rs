@@ -4,7 +4,6 @@ use html5ever::{
     local_name, namespace_url, ns, tendril::StrTendril, tree_builder::TreeSink, QualName,
 };
 use html_tags::ElementOwned;
-use lightningcss::rules::CssRuleList;
 use ouroboros::self_referencing;
 use slotmap::{new_key_type, HopSlotMap};
 use std::borrow::Cow;
@@ -24,15 +23,22 @@ pub struct Doctype {
 }
 
 #[self_referencing]
-#[derive(Debug)]
 pub struct StyleSheet {
     pub contents: StrTendril,
     #[borrows(contents)]
     #[not_covariant]
     pub rules: Result<
-        CssRuleList<'this>,
-        cssparser::ParseError<'this, lightningcss::error::ParserError<'this>>,
+        lightningcss::stylesheet::StyleSheet<'this, 'this>,
+        lightningcss::error::Error<lightningcss::error::ParserError<'this>>,
     >,
+}
+
+impl std::fmt::Debug for StyleSheet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StyleSheet")
+            .field("contents", &self.borrow_contents())
+            .finish()
+    }
 }
 
 /// The different kinds of nodes in the DOM.
@@ -68,13 +74,8 @@ pub enum Node {
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Default)]
 pub struct Dom {
-    map: HopSlotMap<NodeHandle, Node>,
+    pub map: HopSlotMap<NodeHandle, Node>,
     pub document: Option<NodeHandle>,
-}
-impl Dom {
-    pub const fn map(&self) -> &HopSlotMap<NodeHandle, Node> {
-        &self.map
-    }
 }
 
 #[allow(dead_code, unused_variables)]
@@ -101,7 +102,7 @@ impl TreeSink for Dom {
     fn elem_name(&self, &target: &Self::Handle) -> html5ever::ExpandedName {
         match &self.map[target] {
             Node::Element { qualified_name, .. } => qualified_name.expanded(),
-            _ => panic!("not an element"),
+            _ => panic!("tried to get the name of a non-element node"),
         }
     }
 
@@ -163,43 +164,61 @@ impl TreeSink for Dom {
         child: html5ever::tree_builder::NodeOrText<Self::Handle>,
     ) {
         match child {
-            html5ever::tree_builder::NodeOrText::AppendNode(node) => {
-                let node = &mut self.map[node];
-                match node {
+            html5ever::tree_builder::NodeOrText::AppendNode(node) => match self.map[node] {
+                Node::Element {
+                    elem: ElementOwned::Style(_) | ElementOwned::Script(_),
+                    ..
+                } => {
+                    tracing::warn!("tried to add a node to a `style`/`script` element");
+                }
+                Node::Element {
+                    ref mut children, ..
+                } => {
+                    children.push(parent);
+                }
+                _ => tracing::warn!("tried to add a node to a non-element node"),
+            },
+            html5ever::tree_builder::NodeOrText::AppendText(text) => {
+                let text_handle = if matches!(
+                    self.map[parent],
                     Node::Element {
                         elem: ElementOwned::Style(_) | ElementOwned::Script(_),
                         ..
+                    }
+                ) {
+                    NodeHandle::default()
+                } else {
+                    self.map.insert(Node::Text(text.clone()))
+                };
+
+                match self.map[parent] {
+                    Node::Element {
+                        elem: ElementOwned::Style(_),
+                        ref children,
+                        ..
                     } => {
-                        tracing::warn!("tried to add a node to a `style`/`script` element");
+                        let style = children.get(0).copied().and_then(|h| self.map.get_mut(h));
+
+                        match style {
+                            Some(Node::StyleSheet(style)) => {
+                                let mut contents = style.borrow_contents().clone();
+                                contents.push_tendril(&text);
+                                *style = StyleSheet::new(contents, stylesheet_parser);
+                            }
+                            _ => {
+                                tracing::error!("INVALID STATE: `style` element's first child isn't `Some(Node::StyleSheet)`");
+                            }
+                        }
                     }
-                    Node::Element { children, .. } => {
-                        children.push(parent);
+                    Node::Element {
+                        ref mut children, ..
+                    } => {
+                        debug_assert_ne!(text_handle, NodeHandle::default());
+                        children.push(text_handle);
                     }
-                    _ => panic!("not an element"),
+                    _ => tracing::warn!("tried to add a node to a non-element node"),
                 }
             }
-            html5ever::tree_builder::NodeOrText::AppendText(text) => match self.map[parent] {
-                Node::Element {
-                    elem: ElementOwned::Style(_),
-                    ref children,
-                    ..
-                } => {
-                    let style = children.get(0).copied().and_then(|h| self.map.get_mut(h));
-
-                    match style {
-                        Some(Node::StyleSheet(style)) => {
-                            // style.with_mut(user);
-                        }
-                        _ => {
-                            tracing::error!("INVALID STATE: `style` element's first child isn't `Some(Node::StyleSheet)`");
-                        }
-                    }
-                }
-                Node::Element { mut children, .. } => {
-                    children.push(self.map.insert(Node::Text(text)));
-                }
-                _ => panic!("not an element"),
-            },
         }
     }
 
@@ -249,28 +268,25 @@ impl TreeSink for Dom {
     }
 
     fn add_attrs_if_missing(&mut self, &target: &Self::Handle, attrs: Vec<html5ever::Attribute>) {
-        match &mut self.map[target] {
-            Node::Element { elem, .. } => {
-                for attr in attrs {
-                    elem.set_attr(&attr.name.local, attr.value);
-                }
+        if let Node::Element { elem, .. } = &mut self.map[target] {
+            for attr in attrs {
+                elem.set_attr(&attr.name.local, attr.value);
             }
-            _ => panic!("Not an element"),
+        } else {
+            tracing::warn!("tried to add a node to a non-element node");
         }
     }
 
     fn remove_from_parent(&mut self, &target: &Self::Handle) {
-        match self.map[target] {
-            Node::Element { parent, .. } => {
-                let parent = &mut self.map[parent];
-                match parent {
-                    Node::Element { children, .. } => {
-                        children.retain(|&x| x != target);
-                    }
-                    _ => panic!("Not an element"),
-                }
+        if let Node::Element { parent, .. } = self.map[target] {
+            let parent = &mut self.map[parent];
+            if let Node::Element { children, .. } = parent {
+                children.retain(|&x| x != target);
+            } else {
+                tracing::warn!("tried to remove a node from a non-element node");
             }
-            _ => panic!("Not an element"),
+        } else {
+            tracing::warn!("tried to remove a node from a non-element node");
         }
     }
 
@@ -295,11 +311,12 @@ mod test {
 
 fn stylesheet_parser(
     contents: &StrTendril,
-) -> Result<CssRuleList, cssparser::ParseError<lightningcss::error::ParserError>> {
-    let mut input = cssparser::ParserInput::new(contents);
-    let mut parser = cssparser::Parser::new(&mut input);
-    CssRuleList::parse(
-        &mut parser,
-        &lightningcss::stylesheet::ParserOptions::default(),
+) -> Result<
+    lightningcss::stylesheet::StyleSheet,
+    lightningcss::error::Error<lightningcss::error::ParserError>,
+> {
+    lightningcss::stylesheet::StyleSheet::parse(
+        contents,
+        lightningcss::stylesheet::ParserOptions::default(),
     )
 }

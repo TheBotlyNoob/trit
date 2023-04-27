@@ -3,6 +3,7 @@ use html5ever::tendril::TendrilSink;
 use html5ever::tree_builder::TreeSink;
 use html5ever::{parse_document, ParseOpts};
 use html_tags::ElementOwned;
+use lightningcss::rules::CssRuleList;
 use softbuffer::GraphicsContext;
 use tiny_skia::{Paint, Path, PathBuilder, Pixmap, Rect, Transform};
 use winit::dpi::PhysicalSize;
@@ -39,7 +40,7 @@ pub fn event_loop(
     let mut url = String::with_capacity(16);
 
     event_loop.run(move |event, _, control_flow| {
-        control_flow.set_poll();
+        control_flow.set_wait();
 
         match event {
             Event::RedrawRequested(window_id) if window_id == window.id() => {
@@ -54,13 +55,13 @@ pub fn event_loop(
                 let root = dom.get_document();
 
                 let root_nodes = dom
-                    .map()
+                    .map
                     .values()
                     .filter(|n| matches!(n, Node::Element { parent, .. } if *parent == root));
 
                 // TODO: external stylesheets
-                let style_nodes = dom
-                    .map()
+                let style = dom
+                    .map
                     .values()
                     .filter_map(|n| {
                         if let Node::Element {
@@ -74,11 +75,25 @@ pub fn event_loop(
                             None
                         }
                     })
-                    .map(|&n| unsafe { dom.map().get_unchecked(n) });
-
-                for node in style_nodes {
-                    tracing::info!("{node:#?}");
-                }
+                    .map(|&n| unsafe { dom.map.get_unchecked(n) })
+                    .fold(
+                        lightningcss::stylesheet::StyleSheet::new(
+                            Vec::new(),
+                            CssRuleList(Vec::new()),
+                            lightningcss::stylesheet::ParserOptions::default(),
+                        ),
+                        |mut a, b| {
+                            if let Node::StyleSheet(stylesheet) = b {
+                                stylesheet.with_rules(|rules| {
+                                    if let Ok(stylesheet) = rules {
+                                        a.rules.0.extend_from_slice(&stylesheet.rules.0);
+                                        a.sources.extend_from_slice(&stylesheet.sources);
+                                    }
+                                });
+                            };
+                            a
+                        },
+                    );
 
                 for node in root_nodes {
                     let Node::Element { elem, children, .. } = node else {
@@ -110,9 +125,6 @@ pub fn event_loop(
                 window_id,
             } if window_id == window.id() => {
                 control_flow.set_exit();
-            }
-            Event::MainEventsCleared => {
-                window.request_redraw();
             }
             // user input
             Event::WindowEvent {
@@ -177,7 +189,7 @@ fn render_text(
 ) {
     let mut text = String::new();
     for &child in children {
-        let node = dom.map().get(child);
+        let node = dom.map.get(child);
         if let Some(Node::Text(contents)) = node {
             text.push_str(if matches!(elem, ElementOwned::Pre(_)) {
                 contents
